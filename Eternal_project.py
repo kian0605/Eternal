@@ -128,8 +128,8 @@ class Eternal_project:
             t0 = self.data[self.cat_list[-1]].dropna(how='any',axis=0).index[0]
             t1 = self.data[self.cat_list[-1]].dropna(how='any',axis=0).index[-1]
             X = pd.concat(self.data, axis=1, ignore_index=False)
-            X ,n = remove_outliers(X[t0:t1],10)
             X = X.replace({0:np.nan})
+            X ,n = remove_outliers(X[t0:t1],10)
             Xrolling = X.rolling(12, min_periods=1, center=False).mean()
             X.update(Xrolling, overwrite=False)
             X = X.interpolate(limit_area='inside')
@@ -231,12 +231,14 @@ class Eternal_project:
             y_h = y_0[t0+rd(months=h):t1a]
             # Traditional correlation
             X_h = self.X[t0:t1a-rd(months=h)]
-            z = pd.concat([y_h,X_h],axis=1)
-            z = z.loc[:,z.var()!=0]
-            z_corr = z.corr().iloc[0,:]
-            z_sort = z_corr.sort_values().dropna()
-            x_negcorr = z_sort[:10]
-            x_postcorr= z_sort[-11:-1].sort_values(ascending=False)
+# =============================================================================
+#             z = pd.concat([y_h,X_h],axis=1)
+#             z = z.loc[:,z.var()!=0]
+#             z_corr = z.corr().iloc[0,:]
+#             z_sort = z_corr.sort_values().dropna()
+#             x_negcorr = z_sort[:10]
+#             x_postcorr= z_sort[-11:-1].sort_values(ascending=False)
+# =============================================================================
 
 
             f_h = self.f[t0:t1a-rd(months=h)]
@@ -364,10 +366,10 @@ class Eternal_project:
             t0 = max(self.tt0, y_0.index[0])
             # out-of-sample index
             t2 = min(tt2, y_0.index[-1])
+            #t1b = t2 - rd(months=h)
             # in-sample index
-            t1b = t2 - rd(months=h)
             t1a = self.tt1
-
+            #print(t0,t1a,t1b,tt2)
             y_h = y_0[t0 + rd(months=h):t1a]
             # Traditional correlation
             X_h = self.X[t0:t1a - rd(months=h)]
@@ -375,8 +377,9 @@ class Eternal_project:
             z = z.loc[:, z.var() != 0]
             z_corr = z.corr().iloc[0, :]
             z_sort = z_corr.sort_values().dropna()
-            x_negcorr = z_sort[:10]
-            x_postcorr = z_sort[-11:-1].sort_values(ascending=False)
+            c = min(X_h.shape[1],10)
+            x_negcorr = z_sort[:c]
+            x_postcorr = z_sort[-1*c-1:-1].sort_values(ascending=False)
             # X[x_negcorr.index].plot()
             # X[x_postcorr.index].plot()
             f_h = self.f[t0:t1a - rd(months=h)]
@@ -417,37 +420,42 @@ class Eternal_project:
                 [yhat_LPCA, yhat_BR, yhat_GBR, yhat_ABR, yhat_Lx, yhat_BRx, yhat_GBRx, yhat_ABRx, y_h], axis=1)
             self.x_loading.iloc[ii, :] = self.f_loading @ reg.coef_ * np.sqrt(len(self.f))
             x_sort = self.x_loading.iloc[ii, :].sort_values()
-            x_negcoef = x_sort[:10]
-            x_postcoef = x_sort[-10:].sort_values(ascending=False)
+            x_negcoef = x_sort[:c]
+            x_postcoef = x_sort[-1*c:].sort_values(ascending=False)
             # out-of-sample forecast
-            yfcast_LPCA = reg.predict(self.f[t0 + rd(months=h):t1b])
-            yfcast_LPCA = pd.DataFrame(yfcast_LPCA, index=pd.date_range(t0 + rd(months=2 * h), t2, freq='MS'))
+            yfcast_LPCA = reg.predict(self.f[t0 + rd(months=h):t2])
+            yfcast_LPCA = pd.DataFrame(yfcast_LPCA, index=pd.date_range(t0 + rd(months=2 * h), t2+rd(months=h), freq='MS'))
 
-            yfcast_Lx = regx.predict(self.X[t0 + rd(months=h):t1b])
-            yfcast_Lx = pd.DataFrame(yfcast_Lx, index=pd.date_range(t0 + rd(months=2 * h), t2, freq='MS'))
+            yfcast_Lx = regx.predict(self.X[t0 + rd(months=h):t2])
+            yfcast_Lx = pd.DataFrame(yfcast_Lx, index=pd.date_range(t0 + rd(months=2 * h), t2+rd(months=h), freq='MS'))
 
             ## bagging pca, boosting pca, adboosting pca
-            yfcast_BR = reg_BR.predict(self.f[t0 + rd(months=h):t1b])
-            yfcast_BR = pd.DataFrame(yfcast_BR, index=pd.date_range(t0 + rd(months=2 * h), t2, freq='MS'))
-            yfcast_GBR = reg_GBR.predict(self.f[t0 + rd(months=h):t1b])
-            yfcast_GBR = pd.DataFrame(yfcast_GBR, index=pd.date_range(t0 + rd(months=2 * h), t2, freq='MS'))
-            yfcast_ABR = reg_ABR.predict(self.f[t0 + rd(months=h):t1b])
-            yfcast_ABR = pd.DataFrame(yfcast_ABR, index=pd.date_range(t0 + rd(months=2 * h), t2, freq='MS'))
+            yfcast_BR = reg_BR.predict(self.f[t0 + rd(months=h):t2])
+            yfcast_BR = pd.DataFrame(yfcast_BR, index=pd.date_range(t0 + rd(months=2 * h), t2+rd(months=h), freq='MS'))
+            yfcast_GBR = reg_GBR.predict(self.f[t0 + rd(months=h):t2])
+            yfcast_GBR = pd.DataFrame(yfcast_GBR, index=pd.date_range(t0 + rd(months=2 * h), t2+rd(months=h), freq='MS'))
+            yfcast_ABR = reg_ABR.predict(self.f[t0 + rd(months=h):t2])
+            yfcast_ABR = pd.DataFrame(yfcast_ABR, index=pd.date_range(t0 + rd(months=2 * h), t2+rd(months=h), freq='MS'))
 
             ## bagging X, boosting X, adboosting X
-            yfcast_BRx = reg_BRx.predict(self.X[t0 + rd(months=h):t1b])
-            yfcast_BRx = pd.DataFrame(yfcast_BRx, index=pd.date_range(t0 + rd(months=2 * h), t2, freq='MS'))
-            yfcast_GBRx = reg_GBRx.predict(self.X[t0 + rd(months=h):t1b])
-            yfcast_GBRx = pd.DataFrame(yfcast_GBRx, index=pd.date_range(t0 + rd(months=2 * h), t2, freq='MS'))
-            yfcast_ABRx = reg_ABRx.predict(self.X[t0 + rd(months=h):t1b])
-            yfcast_ABRx = pd.DataFrame(yfcast_ABRx, index=pd.date_range(t0 + rd(months=2 * h), t2, freq='MS'))
+            yfcast_BRx = reg_BRx.predict(self.X[t0 + rd(months=h):t2])
+            yfcast_BRx = pd.DataFrame(yfcast_BRx, index=pd.date_range(t0 + rd(months=2 * h), t2+rd(months=h), freq='MS'))
+            yfcast_GBRx = reg_GBRx.predict(self.X[t0 + rd(months=h):t2])
+            yfcast_GBRx = pd.DataFrame(yfcast_GBRx, index=pd.date_range(t0 + rd(months=2 * h), t2+rd(months=h), freq='MS'))
+            yfcast_ABRx = reg_ABRx.predict(self.X[t0 + rd(months=h):t2])
+            yfcast_ABRx = pd.DataFrame(yfcast_ABRx, index=pd.date_range(t0 + rd(months=2 * h), t2+rd(months=h), freq='MS'))
 
             yfcast = pd.concat(
                 [yfcast_LPCA, yfcast_BR, yfcast_GBR, yfcast_Lx, yfcast_ABR, yfcast_BRx, yfcast_GBRx, yfcast_ABRx,
                  y_0[t0 + rd(months=2 * h):t2]], axis=1)
+            yfcast.columns = ['forecast_LPC','forecast_BR','forecast_GBR','forecast_ABR','forecast_LX','forecast_BRx','forecast_GBRx','forecast_ABRx','real']
+            yfcast['upper'] = yfcast.loc[:,'forecast_LPC':'forecast_ABRx'].max(axis=1)
+            yfcast['lower'] = yfcast.loc[:,'forecast_LPC':'forecast_ABRx'].min(axis=1)
+            yfcast['mean'] = yfcast.loc[:,'forecast_LPC':'forecast_ABRx'].mean(axis=1)
             # X[x_negcoef.index].plot()
             # X[x_postcoef.index].plot()
-            est_mse = np.mean((yfcast.iloc[:, 0:-1]['2022-1-1':] - np.array(yfcast.iloc[:, -1:]['2022-1-1':])) ** 2)
+            est_mse = np.nanmean((yfcast.iloc[:, :]['2022-1-1':] - np.array(yfcast.iloc[:, 8:9]['2022-1-1':])) ** 2,axis=0)
+            est_mse = pd.DataFrame(est_mse,index=yfcast.columns)
             self.result['h=' + str(h)].update(
                 {name: [fcast_index, yfcast, x_negcoef, x_postcoef, x_negcorr, x_postcorr, est_mse]})
         return self.result
@@ -464,7 +472,9 @@ class Eternal_project:
             self.feature_x_importance = pd.DataFrame(self.feature_x_importance,columns=['regx','reg_BRx','reg_GBRx','reg_ABRx'],index=self.X.columns.to_flat_index())
             fig, axes = plt.subplots(nrows=4, ncols=1)
             for ii in range(4):
-                df = self.feature_x_importance.iloc[:,ii:ii+1].sort_values(by=[self.feature_x_importance.columns[ii]],ascending=True).iloc[-10:,:]
+                c = -1*min(10,len(self.feature_x_importance.iloc[:,0]))
+                print(len(self.feature_x_importance.iloc[:,0]))
+                df = self.feature_x_importance.iloc[:,ii:ii+1].sort_values(by=[self.feature_x_importance.columns[ii]],ascending=True).iloc[c:,:]
                 df.index = list(map(lambda x: OpenCC('s2tw').convert(x[0]+':'+x[1]), df.index))
                 df.plot(kind='barh',ax=axes[ii],fontsize=8,figsize=(12,24))
             #plt.subplots_adjust(top=.9,bottom=0.1,left=0.23,right=0.95) #調整圖像位置 
@@ -487,7 +497,7 @@ class Eternal_project:
                 self.result['h='+str(h)][self.name][1]['lower'][self.tt1+rd(months=1):].plot(style='-', lw=2 ,color='grey')
                 self.result['h='+str(h)][self.name][1]['mean'][self.tt1+rd(months=1):].plot(style='-', lw=2 ,color='grey')
                 axes.set_title(self.name+' , h='+str(h), x=0.5, y=0.93, fontsize=12) #添加圖像標題，並設定其坐標、字體大小
-                axes.legend(['forecast_LPC','forecast_BR','forecast_GBR','forecast_ABR','forecast_LX','forecast_BRx','forecast_GBRx','forecast_ABRx','real','upper','lower','mean'],fontsize=8) #圖例內容、facecolor='w'背景顏色、字體大小    
+                axes.legend(['forecast_LPC','forecast_BR','forecast_GBR','forecast_ABR','forecast_LX','forecast_BRx','forecast_GBRx','forecast_ABRx','real','upper','lower','mean'],fontsize=6) #圖例內容、facecolor='w'背景顏色、字體大小    
                 #axes[i1,i2].axvline(df.index[-1]-rd(months=h),color='b')
                 axes.axvline(self.tt1+rd(months=1),color='b')
                 #plt.savefig(path+'/graph/'+est_date+'/'+dataset+'/'+labels+' , h='+str(h)+'_'+ass+'_fcast_index.png',dpi=300)
@@ -495,53 +505,47 @@ class Eternal_project:
             plt.show() #show一定要用在最後，因為它會將畫布刷新
             plt.close() #關閉圖形視窗
             
-    def to_excel(self):
+    def to_excel(self,name):
         import os
         if os.path.exists(os.path.join(self.path, self.today, self.dataset, self.scenario))==False:
             os.makedirs(os.path.join(self.path, self.today, self.dataset, self.scenario))
         self.save_path = os.path.join(self.path, self.today, self.dataset, self.scenario)
-        self.mse = pd.DataFrame(np.zeros((8,7)),index = ['forecast_LPC','forecast_BR','forecast_GBR','forecast_ABR','forecast_LX','forecast_BRx','forecast_GBRx','forecast_ABRx'], columns = self.y1.columns)
-        for labels in list(self.y1.columns.values):
-            writer = pd.ExcelWriter(self.save_path+'/'+labels+'_'+self.scenario+'_'+self.fcast_sample+'.xlsx', engine='openpyxl') # 設定路徑及檔名，並指定引擎openpyxl
-            for h in self.h0:
-                
-                self.result['h='+str(h)][labels][0].to_excel(writer, sheet_name='(h='+str(h)+')'+' fcast_in') #合成指標與真實指標
-                self.result['h='+str(h)][labels][1].to_excel(writer, sheet_name='(h='+str(h)+')'+' fcast_out') #合成指標與真實指標
-                if self.fcast_sample == 'in':
-                    df_for_x = pd.DataFrame() # 建立一個df，放 x_coef_corr
-                    df_for_x_data = pd.DataFrame() # 建立一個df，放 
-            
-                    for i,name in enumerate(['x_negcoef','x_postcoef','x_negcorr','x_postcorr']): 
-                        for_x = pd.DataFrame(self.result['h='+str(h)][labels][i+2])
-                        for_x.columns = [name]                 
-                        for_x = for_x.reset_index()
-                        if i+1>2 : #for_x['index'][0].type #是tuple
-                            #在位置 0 處建立一個名稱為 'CEIC分類' 的新列，預設值為 nan。
-                            #allow_duplicates=False 確保 dataFrame 中只有一列名為 column 的列
-                            for_x.insert(0, 'CEIC分類', np.nan, allow_duplicates=False)
-                            for_x.insert(1, '變數名稱', np.nan, allow_duplicates=False)       
-                            for s in range(len(for_x)):#填入內容                    
-                                for_x['CEIC分類'][s]=for_x['index'][s][0]
-                                for_x['變數名稱'][s]=for_x['index'][s][1]  
-                            for_x = for_x.drop('index',axis=1)
-                        df_for_x = pd.concat([df_for_x,for_x],axis=1)   
-                        
-                        x_data = self.X[self.result['h='+str(h)][labels][i+2].index]
-                        #新增欄
-                        col_name=x_data.columns.tolist()  # 將數據框的列名全部提取出來存放在列表裡           
-                        col_name.insert(0,name)   # 在列索引為0的位置插入一列,列名為name，剛插入時不會有值，整列都是NaN                  
-                        x_data=x_data.reindex(columns=col_name) # DataFrame.reindex() 對原行/列索引重新構建索引值            
-                        df_for_x_data = pd.concat([df_for_x_data,x_data],axis=1)
-                        
-                    df_for_x.to_excel(writer, sheet_name='(h='+str(h)+')'+' x_coef_corr',index=False) #coef最負與最正 & corr最負與最正        
-                    df_for_x_data.to_excel(writer, sheet_name='(h='+str(h)+')'+' x_data')        
-        
-                    self.result['h='+str(h)][labels][-1].to_excel(writer, sheet_name='mse')
-                    self.mse[labels] = self.result['h='+str(h)][labels][-1].values
-                writer.save() # 存檔生成excel檔案
-        writer = pd.ExcelWriter(self.save_path+'/'+self.fcast_sample+'_mse.xlsx', engine='openpyxl') # 設定路徑及檔名，並指定引擎openpyxl
-        self.mse.to_excel(writer, sheet_name='mse')
-        writer.save() # 存檔生成excel檔案
+        self.mse = pd.DataFrame(np.zeros((12,1)),index = ['forecast_LPC','forecast_BR','forecast_GBR','forecast_ABR','forecast_LX','forecast_BRx','forecast_GBRx','forecast_ABRx','real','upper','lower','mean'])
+        for h in self.h0:
+            writer = pd.ExcelWriter(self.save_path+'/'+name+'_'+str(h)+'.xlsx', engine='openpyxl') # 設定路徑及檔名，並指定引擎openpyxl
+            self.result['h='+str(h)][name][0].to_excel(writer, sheet_name='(h='+str(h)+')'+' fcast_in') #合成指標與真實指標
+            self.result['h='+str(h)][name][1].to_excel(writer, sheet_name='(h='+str(h)+')'+' fcast_out') #合成指標與真實指標
+            df_for_x = pd.DataFrame() # 建立一個df，放 x_coef_corr
+            df_for_x_data = pd.DataFrame() # 建立一個df，放 
+    
+            for i,name2 in enumerate(['x_negcoef','x_postcoef','x_negcorr','x_postcorr']): 
+                for_x = pd.DataFrame(self.result['h='+str(h)][name][i+2])
+                for_x.columns = [name2]                 
+                for_x = for_x.reset_index()
+                if i+1>2 : #for_x['index'][0].type #是tuple
+                    #在位置 0 處建立一個名稱為 'CEIC分類' 的新列，預設值為 nan。
+                    #allow_duplicates=False 確保 dataFrame 中只有一列名為 column 的列
+                    for_x.insert(0, 'CEIC分類', np.nan, allow_duplicates=False)
+                    for_x.insert(1, '變數名稱', np.nan, allow_duplicates=False)       
+                    for s in range(len(for_x)):#填入內容                    
+                        for_x['CEIC分類'][s]=for_x['index'][s][0]
+                        for_x['變數名稱'][s]=for_x['index'][s][1]  
+                    for_x = for_x.drop('index',axis=1)
+                df_for_x = pd.concat([df_for_x,for_x],axis=1)   
+                print(name)
+                x_data = self.X[self.result['h='+str(h)][name][i+2].index]
+                #新增欄
+                col_name=x_data.columns.tolist()  # 將數據框的列名全部提取出來存放在列表裡           
+                col_name.insert(0,name2)   # 在列索引為0的位置插入一列,列名為name，剛插入時不會有值，整列都是NaN                  
+                x_data=x_data.reindex(columns=col_name) # DataFrame.reindex() 對原行/列索引重新構建索引值            
+                df_for_x_data = pd.concat([df_for_x_data,x_data],axis=1)
+                    
+                df_for_x.to_excel(writer, sheet_name='(h='+str(h)+')'+' x_coef_corr',index=False) #coef最負與最正 & corr最負與最正        
+                df_for_x_data.to_excel(writer, sheet_name='(h='+str(h)+')'+' x_data')        
+    
+            self.result['h='+str(h)][name][-1].to_excel(writer, sheet_name='mse')
+            self.mse = self.result['h='+str(h)][name][-1].values
+            writer.save() # 存檔生成excel檔案
 
 
 

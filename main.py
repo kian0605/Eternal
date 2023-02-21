@@ -12,13 +12,14 @@ import seaborn as sns; sns.set()
 
 
 #------------- Specifications -------------------------------------------------
-#path = r'/home/kian/Dropbox/NTPU/RA_project/RA/Janice/臺經院計畫/長興中國大陸經營情勢指標資料/長興中國大陸經營情勢指標資料/code' # Working directory
+path0 = '/home/kian/Dropbox/NTPU/RA_project/RA/Janice/臺經院計畫/長興中國大陸經營情勢指標資料/長興中國大陸經營情勢指標資料/code' # Working directory
+path = '/home/kian/Dropbox/NTPU/RA_project/RA/Janice/臺經院計畫/長興中國大陸經營情勢指標資料/長興中國大陸經營情勢指標資料/' # Working directory
 #path = r'/home/kian/Dropbox/DjangoProject_byJanice/mysite/myapp2/' # Working directory
-path = r'C:\Users\kian_\Dropbox\NTPU\RA_project\RA\Janice\臺經院計畫\長興中國大陸經營情勢指標資料\長興中國大陸經營情勢指標資料\code'
+#path = r'C:\Users\kian_\Dropbox\NTPU\RA_project\RA\Janice\臺經院計畫\長興中國大陸經營情勢指標資料\長興中國大陸經營情勢指標資料\code'
 
 
 import os # Janice 新加入
-os.chdir(path) # Janice 新加入
+os.chdir(path0) # Janice 新加入
 from Eternal_project import * # Janice 調整code位置
 
 # gridsearch parameters
@@ -30,8 +31,8 @@ grid['max_samples'] = [0.7, 1.0] # BR
 grid['max_depth'] = [1,2,3] # GBR
 
 
-h0 = [3,6,9,12]
-ass = 'normal'
+h0 = [9]
+ass = 'covid'
 dataset = 'all' # all or 20 or long
 ### Spcification of in-sample and out-of-sample 
 if ass == 'covid':
@@ -47,9 +48,9 @@ y_list= ['塗料產業_營收金額(台幣)','膠黏劑產業_營收金額(台�
 
 #------------- Load data ------------------------------------------------------
 #data =  pd.read_excel(path+r'/CEIC資料庫資料與長興材料公司原物料均價.xlsx',sheet_name=None,skiprows=[1], parse_dates={'time': [0]}, date_parser=my_date_parser, index_col='time')
-data =  pd.read_excel(r'C:\Users\kian_\Desktop\code\CEIC資料庫資料與長興材料公司原物料均價0209.xlsx',sheet_name=None,skiprows=[1], parse_dates={'time': [0]}, date_parser=my_date_parser, index_col='time')
+data0 =  pd.read_excel('/home/kian/Dropbox/NTPU/CEIC資料庫資料與長興材料公司原物料均價0209.xlsx',sheet_name=None,skiprows=[1], parse_dates={'time': [0]}, date_parser=my_date_parser, index_col='time')
 #y = pd.read_excel(path+r'/長興材料公司_1998年至2021年_各產業營收金額與銷售量 .xlsx',sheet_name=None,skiprows=[1], parse_dates={'time': [0]}, date_parser=my_date_parser, index_col='time')
-y = pd.read_excel(r'C:\Users\kian_\Desktop\code\長興2015-2022三大產業銷售金額與數量.xlsx',sheet_name=None,skiprows=[1], parse_dates={'time': [0]}, date_parser=my_date_parser, index_col='time')
+y = pd.read_excel('/home/kian/Dropbox/NTPU/長興2015-2022三大產業銷售金額與數量.xlsx',sheet_name=None,skiprows=[1], parse_dates={'time': [0]}, date_parser=my_date_parser, index_col='time')
 cat_list = list(data.keys())
 #------------- Load data ------------------------------------------------------
 
@@ -68,17 +69,31 @@ y1 = y1.interpolate(limit_area='inside')
 
 
 
+
 #------------- Main process ---------------------------------------------------
-model = Eternal_project(y1,data,path,h0,grid,tt0,tt1,ass)
-model.dataset_X(dataset)
-#model.est()
+
 for ii in y_list:
-    model.importances(6,ii)
+    data = data0.copy()
+    if ii.find('膠黏劑') == 0:
+        del data['20大原料單價(台幣均價_計量單位全為KG）']
+        del data['PCB']
+        del data['塗料']
+    elif ii.find('PCB') == 0:
+        del data['20大原料單價(台幣均價_計量單位全為KG）']
+        del data['膠粘劑']
+        del data['塗料']
+    elif ii.find('塗料') == 0:
+        del data['20大原料單價(台幣均價_計量單位全為KG）']
+        del data['PCB']
+        del data['膠粘劑']
+    model = Eternal_project(y1,data,path,h0,grid,ass)
+    model.dataset_X(dataset)
+    model.est(ii)
+    model.importances(9,ii)
+    result = model.fcast(ii)
     model.plot('importance')
-    
-result = model.fcast()
-model.plot('fcast')
-model.to_excel()    
+    model.plot('fcast')
+    model.to_excel(ii)    
 #------------- Main process ---------------------------------------------------
 
 
