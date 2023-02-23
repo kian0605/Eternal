@@ -19,7 +19,9 @@ path = '/home/kian/Dropbox/NTPU/RA_project/RA/Janice/臺經院計畫/長興中�
 
 
 import os # Janice 新加入
-os.chdir(path0) # Janice 新加入
+import sys
+sys.path.extend([path0])
+#os.chdir(path0) # Janice 新加入
 from Eternal_project import * # Janice 調整code位置
 
 # gridsearch parameters
