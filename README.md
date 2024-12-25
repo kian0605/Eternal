@@ -24,3 +24,63 @@ $$
 $$
 S_{t}^{\mathrm{A}} = \sum_{j=1}^{N_t} \left( S_{t,j}^{\mathrm{A,ps}} - S_{t,j}^{\mathrm{A,neg}} \right)。
 $$
+
+## 情緒指標二：
+
+相較於情緒指標一針對每一天的所有新聞計算情緒分數，本範例透過關鍵字字典篩選每日新聞，僅將包含產業、總體經濟或不分類關鍵字的新聞納入計算。對於每日新聞 $A_{t,j}$，若其斷詞結果包含至少一個產業關鍵字（即 $\exists i$ 使得 $WS_{t,ji} \in \mathbb{K}_{\mathrm{ind}}$），則計算該篇新聞的正面與負面情緒分數：
+
+$$
+S_{t,j}^{\mathrm{A,ps,ind}} = \sum_{i=1}^{M_{t,j}} \mathbf{1}\{ WS_{t,ji} \in \mathrm{DICT}_{A,\mathrm{ps}} \} \cdot \mathbf{1}\left\{ \exists k \in \{1, \dots, M_{t,j}\} \text{ such that } WS_{t,jk} \in \mathbb{K}_{\mathrm{ind}} \right\}
+$$
+
+$$
+S_{t,j}^{\mathrm{A,neg,ind}} = \sum_{i=1}^{M_{t,j}} \mathbf{1}\{ WS_{t,ji} \in \mathrm{DICT}_{A,\mathrm{neg}} \} \cdot \mathbf{1}\left\{ \exists k \in \{1, \dots, M_{t,j}\} \text{ such that } WS_{t,jk} \in \mathbb{K}_{\mathrm{ind}} \right\}
+$$
+
+時間點 $t$ 下，產業相關的情緒分數定義為：
+
+$$
+S_{t}^{\mathrm{A,ind}} = \sum_{j=1}^{N_t} \left( S_{t,j}^{\mathrm{A,ps,ind}} - S_{t,j}^{\mathrm{A,neg,ind}} \right)
+$$
+
+## 情緒指標三：
+
+情緒指標一與二僅基於情緒詞彙的出現次數進行分數計算，未考慮新聞篇幅影響。本範例提出標準化情緒分數的方法，按每篇新聞的斷詞總數 $M_{t,j}$ 進行標準化：
+
+$$
+\tilde{S}_{t}^{\mathrm{A}} = \sum_{j=1}^{N_t} \frac{\left( S_{t,j}^{\mathrm{A,ps}} - S_{t,j}^{\mathrm{A,neg}} \right)}{M_{t,j}}
+$$
+
+## 情緒指標四：
+
+情緒指標四僅分析包含關鍵字的句子，並計算該句的情緒分數。定義關鍵字所在的句子為 $Sen_{t,jl}$，計算正面與負面情緒分數為：
+
+$$
+\bar{S}_{t,j}^{\mathrm{A,ps}} = \sum_{l} \sum_{i \in Sen_{t,jl}} \mathbf{1}\{ i \in \mathrm{DICT}_{A,\mathrm{ps}} \}
+$$
+
+$$
+\bar{S}_{t,j}^{\mathrm{A,neg}} = \sum_{l} \sum_{i \in Sen_{t,jl}} \mathbf{1}\{ i \in \mathrm{DICT}_{A,\mathrm{neg}} \}
+$$
+
+## 情緒指標五：
+
+基於情緒指標四，按句子的斷詞數進行標準化：
+
+$$
+\tilde{\bar{S}}_{t,j}^{\mathrm{A,ps}} = \sum_{l} \frac{\sum_{i \in Sen_{t,jl}} \mathbf{1}\{ i \in \mathrm{DICT}_{A,\mathrm{ps}} \}}{|Sen_{t,jl}|}
+$$
+
+$$
+\tilde{\bar{S}}_{t,j}^{\mathrm{A,neg}} = \sum_{l} \frac{\sum_{i \in Sen_{t,jl}} \mathbf{1}\{ i \in \mathrm{DICT}_{A,\mathrm{neg}} \}}{|Sen_{t,jl}|}
+$$
+
+### 表格：情緒指標定義
+
+| 設定                | 字典 A               | 字典 B               | 兩本交集                | 兩本聯集                | 備註            |
+|---------------------|----------------------|----------------------|-------------------------|-------------------------|-----------------|
+| 標準化             | $\tilde{S}_{t}^{\mathrm{A}}$ | $\tilde{S}_{t}^{\mathrm{B}}$ | $\tilde{S}_{t}^{\mathrm{A\cap B}}$ | $\tilde{S}_{t}^{\mathrm{A\cup B}}$ | 標準化數據 |
+| 沒標準化           | $S_{t}^{\mathrm{A}}$ | $S_{t}^{\mathrm{B}}$ | $S_{t}^{\mathrm{A\cap B}}$ | $S_{t}^{\mathrm{A\cup B}}$ | 原始數據     |
+| 產業關鍵字         | $\tilde{S}_{t}^{\mathrm{A,ind}}$ | $\tilde{S}_{t}^{\mathrm{B,ind}}$ | $\tilde{S}_{t}^{\mathrm{A\cap B,ind}}$ | $\tilde{S}_{t}^{\mathrm{A\cup B,ind}}$ | 標準化數據 |
+| 總體關鍵字         | $\tilde{S}_{t}^{\mathrm{A,macro}}$ | $\tilde{S}_{t}^{\mathrm{B,macro}}$ | $\tilde{S}_{t}^{\mathrm{A\cap B,macro}}$ | $\tilde{S}_{t}^{\mathrm{A\cup B,macro}}$ | 標準化數據 |
+| 所有關鍵字         | $\tilde{S}_{t}^{\mathrm{A,all}}$ | $\tilde{S}_{t}^{\mathrm{B,all}}$ | $\tilde{S}_{t}^{\mathrm{A\cap B,all}}$ | $\tilde{S}_{t}^{\mathrm{A\cup B,all}}$ | 標準化數據 |
