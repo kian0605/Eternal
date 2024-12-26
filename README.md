@@ -1,5 +1,6 @@
 ---
 layout: default
+title: MathJax Example
 ---
 
 # 情緒指標建立
